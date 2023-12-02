@@ -1,0 +1,572 @@
+---
+title: "casestudy"
+author: "HenryCui"
+date: "2022/4/13"
+output:
+  pdf_document: default
+  html_document: default
+---
+# I. 
+
+## (a)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+library(readxl)
+mydata <- read_excel("CAAM382Spring2022-Case Study Data Set.xlsx")
+mydata <- as.data.frame(mydata)
+meanarrival <- c()
+
+for( i in 0:23){
+ends <- mydata[mydata$ARRIVAL_HOUR == i, ]
+meanarrival[i+1] <- length(ends$ARRIVAL_HOUR) / 25
+}
+
+x <- c(0:23)
+
+plot(x,meanarrival,pch=16,xlab="Arrival Hour", ylab="Number of Arrivals")
+axis(1, seq(0,23,1))
+axis(2, seq(0,10,1))
+#points(meanarrival[-24])
+#for (j in 1:24){
+#segments(x0 = x[j], y0 = meanarrival[j], x1=x[j+1],y1=meanarrival[j])
+#}
+mtext(side=3,"Hourly Average Numbers of Arrivals to the ED")
+```
+
+## (b)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+disch <- c()
+for (i in 0:23){
+ends <- mydata[mydata$ARRIVAL_HOUR == i, ]
+ends2 <- ends[ends$ADMIT_FLAG == 0,]
+disch[i+1] <- length(ends2$ARRIVAL_HOUR) /25
+}
+
+x <- c(0:23)
+
+plot(x,disch,pch=16,xlab="Arrival Hour", ylab="Number of Discharged Patients")
+axis(1, seq(0,23,1))
+axis(2, seq(0,10,1))
+#points(disch[-24])
+#for (j in 1:24){
+#segments(x0 = x[j], y0 = disch[j], x1=x[j+1],y1=disch[j])
+#}
+mtext(side=3,"Hourly Average Numbers of Discharged Patients")
+```
+
+## (c)
+
+The approximate arrival rate function for each hour is one constant. We can refer to the following plot for each hourly arrival rate as constants.
+
+The probability is about 0.0042.
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+plot(x,meanarrival,pch=16,xlab="Arrival Hour", ylab="Number of Arrivals")
+axis(1, seq(0,23,1))
+axis(2, seq(0,10,1))
+points(meanarrival[-24])
+for (j in 1:24){
+segments(x0 = x[j], y0 = meanarrival[j], x1=x[j+1],y1=meanarrival[j])
+}
+mtext(side=3,"Hourly Average Numbers of Arrivals to the ED")
+
+para <- sum(meanarrival[13:20])
+cul <- 0
+
+for (i in 0:99){
+  prob <- (exp(-para)*(para**i))/factorial(i)
+  cul <- cul + prob
+}
+```
+
+```{r}
+1 - cul
+```
+
+## (d)
+
+The approximate arrival rate function for each hour is one linear function in the interval [i,i+1], where i can be 0 to 22. We can refer to the following plot for the piece wise linear arrival rate function.
+
+The probability is about 0.0037.
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+plot(x,meanarrival,pch=16,xlab="Arrival Hour", ylab="Number of Arrivals")
+axis(1, seq(0,23,1))
+axis(2, seq(0,10,1))
+
+for (j in 1:24){
+segments(x0 = x[j], y0 = meanarrival[j], x1=x[j+1],y1=meanarrival[j+1])
+}
+mtext(side=3,"Hourly Average Numbers of Arrivals to the ED")
+
+para2 <- 0
+
+for (i in 13:20){
+xreg <- c(x[i],x[i+1])
+yreg <- c(meanarrival[i],meanarrival[i+1])
+fit <- summary(lm(yreg~xreg))
+b0 <- fit$coefficients[1]
+b1 <- fit$coefficients[2]
+integrand <- function(x) {b0+b1*x}
+rate <- integrate(integrand,lower=i-1,upper=i)
+rate <- rate$value
+para2 <- para2+rate
+}
+
+prob2 <- 0
+cul2 <- 0
+for (i in 0:99){
+  prob2 <- (exp(-para2)*(para2**i))/factorial(i)
+  cul2 <- cul2 + prob2
+}
+```
+
+```{r}
+1-cul2
+```
+
+## (e)
+
+IDC for each hour is printed below.
+
+```{r,result=FALSE,echo=FALSE}
+library(dplyr)
+dt1 <- filter(mydata, WEEK == 1, WeekDay == "Wednesday")
+idcsum <- as.data.frame(table(dt1$ARRIVAL_HOUR))
+dt2 <- filter(mydata, WEEK == 1, WeekDay == "Thursday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 1, WeekDay == "Friday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 1, WeekDay == "Saturday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 2, WeekDay == "Wednesday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 3, WeekDay == "Monday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 3, WeekDay == "Wednesday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 3, WeekDay == "Thursday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 3, WeekDay == "Friday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 4, WeekDay == "Monday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 4, WeekDay == "Tuesday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 4, WeekDay == "Wednesday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 4, WeekDay == "Friday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 4, WeekDay == "Saturday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 4, WeekDay == "Sunday")
+idcsum <- cbind(idcsum,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 2, WeekDay == "Monday")
+idcsum2 <- as.data.frame(table(dt2$ARRIVAL_HOUR))
+dt2 <- filter(mydata, WEEK == 2, WeekDay == "Tuesday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 2, WeekDay == "Thursday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 2, WeekDay == "Friday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 2, WeekDay == "Saturday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 2, WeekDay == "Sunday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 3, WeekDay == "Tuesday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 3, WeekDay == "Saturday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 4, WeekDay == "Thursday")
+idcsum2 <- cbind(idcsum2,as.data.frame(table(dt2$ARRIVAL_HOUR))[2])
+dt2 <- filter(mydata, WEEK == 3, WeekDay == "Sunday")
+idcsum3 <- as.data.frame(table(dt2$ARRIVAL_HOUR))
+write.csv(idcsum, "arrate.csv")
+write.csv(idcsum2, "arrate2.csv")
+write.csv(idcsum3, "arrate3.csv")
+```
+
+```{r,echo=FALSE}
+arrate <- read.csv("arrival data.csv")
+idc <- c()
+for (i in 1:24){
+hou <- as.numeric(arrate[i,])
+idc <- c(idc, var(hou[-1])/(mean(hou[-1])))
+}
+
+print(idc)
+print(paste("mean of IDC is", mean(idc), "and standard deviation of IDC is", sqrt(var(idc))))
+```
+
+# Ⅱ. 
+
+## (a)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+hist(mydata$'LOS=ED_Duration+InpatientLOS',breaks=500,xlab = "Length of Stay",ylab="Frequency",main = paste("Histogram of Length of Stay of all patients"))
+me <- mean(as.numeric(mydata$'LOS=ED_Duration+InpatientLOS'))
+sqr <- sqrt(var(as.numeric(mydata$'LOS=ED_Duration+InpatientLOS')))
+print(paste("mean is", me, "and standard deviation is", sqr))
+```
+
+## (b)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+dischargedata <- filter(mydata,ADMIT_FLAG == 0)
+admitdata <- filter(mydata,ADMIT_FLAG == 1)
+
+hist(dischargedata$'LOS=ED_Duration+InpatientLOS',breaks=100,xlab = "Length of Stay",ylab="Frequency",main = paste("Histogram of Length of Stay of Discharged patients"))
+me <- mean(as.numeric(dischargedata$'LOS=ED_Duration+InpatientLOS'))
+sqr <- sqrt(var(as.numeric(dischargedata$'LOS=ED_Duration+InpatientLOS')))
+print(paste("for discharged patients, mean is", me, "and standard deviation is", sqr))
+
+hist(admitdata$'LOS=ED_Duration+InpatientLOS',breaks=50,xlab = "Length of Stay",ylab="Frequency",main = paste("Histogram of Length of Stay of Hospitalized patients"))
+me <- mean(as.numeric(admitdata$'LOS=ED_Duration+InpatientLOS'))
+sqr <- sqrt(var(as.numeric(admitdata$'LOS=ED_Duration+InpatientLOS')))
+print(paste("for hospitalized patients, mean is", me, "and standard deviation is", sqr))
+```
+
+## (c)
+
+The first row printed below is the mean of the length of stay of the patients in different age groups.
+The second row printed below is the standard deviation of the length of stay of the patients in different age groups.
+
+```{r,echo=FALSE}
+meanlength <- c()
+stdlength <- c()
+agedata <- filter(mydata,AGE_GROUP == "0-18")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "19-24")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "25-34")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "35-44")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "45-54")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "55-64")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "65-74")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "75-84")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "85-89")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+agedata <- filter(mydata,AGE_GROUP == "90")
+meanlength <- c(meanlength, mean(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS')))
+stdlength <- c(stdlength, sqrt(var(as.numeric(agedata$'LOS=ED_Duration+InpatientLOS'))))
+
+print(meanlength)
+print(stdlength)
+```
+
+## (d)
+
+Parameter value is 0.00072.
+
+```{r,echo=FALSE}
+testdt <- mydata$`LOS=ED_Duration+InpatientLOS`
+library(univariateML)
+fitexp <- mlexp(testdt,na.rm=TRUE)
+exprate <- as.numeric(fitexp)
+print(paste("parameter value is: ", exprate))
+```
+
+## (e)
+
+By Q-Q plot, the distribution should be Gamma. By Cullen and Frey Graph, the distribution should be beta or Gamma distribution.
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+library(actuar)
+library(univariateML)
+library(fitdistrplus)
+ks.test(testdt,pexp, exprate,alternative="greater")
+univariateML::mlgamma(testdt)
+mlllogis(testdt)
+MASS::fitdistr(testdt,"Poisson")
+
+qqplot(qexp(ppoints(length(testdt)),rate=exprate), testdt, main="Exponential Q-Q Plot")
+qqplot(qgamma(ppoints(length(testdt)),shape=0.490974, rate = 0.000353), testdt, main ="Gamma Q-Q Plot")
+qqplot(qllogis(ppoints(length(testdt)),shape=1.391282, rate = 0.003235), testdt, main = "Log-Logistic Q-Q Plot ")
+qqplot(qpois(ppoints(length(testdt)),1390.8694575), testdt,main = "Poisson Q-Q Plot")
+
+
+descdist(data = testdt)
+```
+
+## (f)
+
+By Pearson's product-moment correlation test, the null hypothesis is that the correlation is zero and we fail to reject the null. Therefore, the correlation between the two should be zero. LOS is not dependent upon the arrival time.
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+library(ggpubr)
+
+averagelos <- c()
+
+for (i in 0:23){
+  hourly <- mydata[mydata$ARRIVAL_HOUR == i, ]
+  averagelos[i+1] <- sum(hourly$`LOS=ED_Duration+InpatientLOS`)/length(hourly$`LOS=ED_Duration+InpatientLOS`)
+}
+
+plot(x,averagelos,xlab="Hour",ylab="LOS of patients", main = "Average LOS of patients arrived in each hour")
+
+cor.test(x,averagelos, method="pearson")
+
+```
+
+# Ⅲ. 
+
+## (a)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+mydata$ARRIVAL_TO_TRIAGE[mydata$ARRIVAL_TO_TRIAGE < 0] <- 0
+mydata$ARRIVAL_TO_TRIAGE[is.na(mydata$ARRIVAL_TO_TRIAGE)] <- 0
+
+hist(mydata$ARRIVAL_TO_TRIAGE,breaks=30, xlab="Waiting time", main = "Wait Time from Arrival to Triage",axes=TRUE)
+
+print(paste("mean is", mean(mydata$ARRIVAL_TO_TRIAGE)))
+print(paste("variance is", var(mydata$ARRIVAL_TO_TRIAGE)))
+
+```
+
+## (b)
+
+```{R,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+mydata$ARRIVAL_TO_PROV_ASSIGN[mydata$ARRIVAL_TO_PROV_ASSIGN < 0] <- 0
+mydata$ARRIVAL_TO_PROV_ASSIGN[is.na(mydata$ARRIVAL_TO_PROV_ASSIGN)] <- 0
+
+hist(mydata$ARRIVAL_TO_PROV_ASSIGN,breaks=30, xlab="Waiting time", main = "Wait Time from Arrival to Health Provider Assigned",axes=TRUE)
+
+print(paste("mean is", mean(mydata$ARRIVAL_TO_PROV_ASSIGN)))
+print(paste("variance is", var(mydata$ARRIVAL_TO_PROV_ASSIGN)))
+
+```
+
+## (c)
+
+By Pearson's product-moment correlation Test, the p-value is small enough. Therefore, the two variables both depend on the arrival time.
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+averagetri <- c()
+
+for (i in 0:23){
+  hourly <- mydata[mydata$ARRIVAL_HOUR == i, ]
+  averagetri[i+1] <- sum(hourly$ARRIVAL_TO_TRIAGE)/length(hourly$ARRIVAL_TO_TRIAGE)
+}
+
+plot(x,averagetri,xlab="Hour",ylab="Wait Time from Arrival to Triage", main = "Hourly Average Wait Time from Arrival to Triage")
+
+cor.test(x,averagetri, method="pearson")
+
+averagepro <- c()
+
+for (i in 0:23){
+  hourly <- mydata[mydata$ARRIVAL_HOUR == i, ]
+  averagepro[i+1] <- sum(hourly$ARRIVAL_TO_PROV_ASSIGN)/length(hourly$ARRIVAL_TO_PROV_ASSIGN)
+}
+
+plot(x,averagepro,xlab="Hour",ylab="Wait Time from Arrival to Health Provider Assigned", main = "Hourly Average Wait Time from Arrival to Health Provider Assigned")
+
+cor.test(x,averagepro, method="pearson")
+```
+
+
+# Ⅳ 
+
+## (a)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+lwbs <- filter(mydata, LEFT_WO_SEEN == 1)
+hist(lwbs$ED_DURATION,breaks=20,xlab="Wait Time",main="Willingness to Wait for patients that left without being seen")
+```
+
+## (b)
+
+We can observe that it follows bimodal distribution.
+
+
+# Ⅴ 
+
+## (a)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+mydata$Day <- 0
+mydata$Day[mydata$WeekDay == "Monday"] <- 2
+mydata$Day[mydata$WeekDay == "Tuesday"] <- 3
+mydata$Day[mydata$WeekDay == "Wednesday"] <- 4
+mydata$Day[mydata$WeekDay == "Thursday"] <- 5
+mydata$Day[mydata$WeekDay == "Friday"] <- 6
+mydata$Day[mydata$WeekDay == "Saturday"] <- 7
+mydata$Day[mydata$WeekDay == "Sunday"] <- 1
+mydata$DURATION <- ceiling(mydata$ED_DURATION/60)
+num_ed <- matrix(0, nrow = 25, ncol = 24)
+for (i in 1:nrow(mydata)) {
+  duration <- mydata$DURATION[i]
+  row <- mydata$Day[i] + (mydata$WEEK[i] - 1) * 7 - 3
+  col <- mydata$ARRIVAL_HOUR[i] + 1
+  while (duration > 0) {
+    num_ed[row,col] <- num_ed[row,col] + 1
+    duration <- duration - 1
+    col <- col + 1
+    if (col == 25) {
+      col = 1
+      row = row + 1
+      if (row == 26) {
+        break;
+      }
+    }
+  }
+}
+plot(colMeans(num_ed), xlab = "Hour", ylab = "Average number of patients",xlim=c(0,23),main="Average Number of Patients in the ED over all the days")
+```
+
+## (b)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+spe <- num_ed[,18]
+hist(spe,breaks=15,xlab="Number of Patients",ylab="Frequency",main="Number of Patients in the ED from 5-6pm")
+
+```
+
+## (c)
+
+We can observe that the plot does not show a pattern of line y=x, so the Little's law does not hold. The possible explanation might be that LOS value is too large. If we use `ED_DURATION`, we can observe that the Little's Law holds as the data show some pattern of line y=x.
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+meanlos <- c()
+for( i in 0:23){
+  eachhour <- mydata[mydata$ARRIVAL_HOUR == i, ]
+  meanlos[i+1] <- sum(eachhour$'LOS=ED_Duration+InpatientLOS')/nrow(eachhour)
+}
+y <- colMeans(num_ed)
+x <- (meanarrival) * (meanlos/60)
+plot(x,y,xlab="average arrival rate * average LOS", ylab ="average number of patients",main="Average arrival rate * average LOS vs. average number of patients")
+ed <- mydata %>% group_by(ARRIVAL_HOUR) %>% summarize("Average" =mean(ED_DURATION))
+tria2 <- ed$"Average" / 60
+plot(tria2 * meanarrival, y,xlab="average ED duration * average arrival rate ", ylab ="average number of patients",main="Average arrival rate * average ED duration vs. average number of patients")
+abline(0,1)
+
+```
+
+
+# Ⅵ 
+
+## (a)
+
+Applying Erlang C formula from the website, the staffing and bed capacity strategy is printed below. The first row is if the standard is 20 minutes, and the second row is if the standard is 30 minutes. The data is different from the hourly average number of patients in the ED. 
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+forecast <- meanarrival/2
+numagents <- c(102, 78, 58, 82,102,74,66,93,93,311,251,199,258,223,289,218,305,208,186,213,204,144,159,127)
+meanvofans <- c(1345.13, 1714.28, 1750.00,2311.64,3274.43,1970.09,1823.95,1656.53,1246.07,1790.45,1283.14,1163.29,1311.80,1304.21,1455.28,1457.49,1306.45,1240.31,1268.65,1254.17,1276.51,1191.43,1419.52,1414.51)  #in seconds
+
+#if 30minutes
+numagents2 <- c(101,77,57,82,102,74,66,93,93,311,250,198,257,223,288,218,304,207,185,212,203,143,159,126)
+meanvofans2 <- c(1775.87,2356.42,2532.13,2311.64,3274.43,1970.09,1823.95,1656.53,1246.07,1790.45,1532.66,1420.80,1562.17,1304.21,1717.30,1457.49,1534.18,1508.01,1559.83,1521.49,1554.32,1509.20,1419.52,1815.13)
+
+plot(numagents,xlab="Hours",ylab="Number of staffing and bed", main="Number of staffing and bed when threshold is twenty minutes")
+plot(numagents2,xlab="Hours",ylab="Number of staffing and bed", main="Number of staffing and bed when threshold is thirty minutes")
+
+print(numagents)
+print(numagents2)
+
+```
+
+
+## (b)
+
+The staffing decision of nurses hourly is printed below.
+
+```{r,echo=FALSE}
+mydata$LOSDURATION <- ceiling(mydata$`LOS=ED_Duration+InpatientLOS`/60)
+
+num_hosp <- matrix(0, nrow = 25, ncol = 24)
+num_disc <- matrix(0, nrow = 25, ncol = 24)
+
+for (i in 1:nrow(mydata)) {
+  duration <- mydata$LOSDURATION[i]
+  row <- mydata$Day[i] + (mydata$WEEK[i] - 1) * 7 - 3
+  col <- mydata$ARRIVAL_HOUR[i] + 1
+  if (mydata$ADMIT_FLAG[i] == 1){
+  while (duration > 0) {
+    num_hosp[row,col] <- num_hosp[row,col] + 1
+    duration <- duration - 1
+    col <- col + 1
+    if (col == 25) {
+      col = 1
+      row = row + 1
+      if (row == 26) {
+        break;
+      }
+    }
+  }
+  }
+  else {
+      while (duration > 0) {
+    num_disc[row,col] <- num_disc[row,col] + 1
+    duration <- duration - 1
+    col <- col + 1
+    if (col == 25) {
+      col = 1
+      row = row + 1
+      if (row == 26) {
+        break;
+      }
+    }
+  }
+  }
+}
+
+
+numnurse <- colMeans(num_disc)/5 + colMeans(num_hosp)/3
+print(ceiling(numnurse))
+
+```
+
+## (c)
+
+To make more realistic model, I think we need to consider the differentiation of cares needed for the ED arrivals. Maybe it is a good idea to set up different models for each triage because different degrees of urgency need different expected waiting time. For each arrival, first classify his or her degree of urgency. Then, put them into different subsets of the data. Applying Erlang C formula for each subset, and we then get the hourly number of agents needed for different levels of wounds or illnesses. 
+
+
+# Ⅶ 
+
+## (a)
+
+```{r,fig.width=12,fig.height=7,fig.align='center',echo=FALSE}
+
+mydata$DECISION_TO_FLOOR[is.na(mydata$DECISION_TO_FLOOR)] <- 0
+hist(mydata$DECISION_TO_FLOOR,breaks=30,xlab="ED boarding time", main="ED boarding time for all arrivals")
+
+print(paste("mean is",mean(mydata$DECISION_TO_FLOOR)))
+print(paste("variance is",var(mydata$DECISION_TO_FLOOR)))
+
+meanboarding <- c()
+
+for (i in 0:23){
+bding <- mydata[mydata$ARRIVAL_HOUR == i, ]
+meanboarding[i+1] <- sum(bding$DECISION_TO_FLOOR) / nrow(bding)
+}
+
+hour <- c(0:23)
+
+plot(hour,meanboarding,xlab="Hours",ylab="Average ED boarding time",main="Hourly Average ED Boarding Time")
+
+```
+
+## (b)
+
+Many variables are needed for this two-time-scale Markov Model. In this model, LOS and time-of-day that patients are discharged are two i.i.d sequences. The service hour is no longer `LOS=ED_Duration+InpatientLOS` from our dataset. It depends on time-of-day that patients are admitted, LOS, and the time-of-day that patients are discharged. The hourly mean waiting time is now assumed to be geometrically distributed. We can use geometric distribution to estimate the hourly mean waiting time. In this model, discharge has its own independent distribution. For each hour now from 1 to 24, take the hour over 24 (i/24), which is our discharge distribution. We can put this baseline discharge distribution earlier or later to test the model and check system congestion.
+
+## (c)
+
+Because the wards are in days, but the ED is in hours, after each hour, there will be some hospitalized patients that can be transferred from ED beds to the wards. If keeping those patients in the ED, there will be congestion. Therefore, the transition unit is designed hourly for those patients who should be transformed from the ED, but they can only stay in the transition unit because discharge decisions in the wards are made daily. We will the need the average handling time in the transition unit, which would be the difference in hours between discharge time from the ED beds and arrival time to the wards. Besides the average handling time, we also need the average arrival rate to the transition unit, which is the average discharge rate from the ED. Then we can apply Erlang C formula to find the hourly average capacity for the unit. The performance metrics would be the level of the waits for the unit less than certain time according to Erlang C formula.
